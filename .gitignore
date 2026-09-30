@@ -75,3 +75,5 @@ test-results/
 package-lock.json
 CODEX-IMPLEMENT.md
 MOBILE-ACTION-BAR-PLAN.md
+check-doc-states.cjs
+list-proof-docs.cjs

@@ -236,31 +236,29 @@ async function loadPrismPlugin(): Promise<MilkdownPlugin | null> {
   try {
     await import('prismjs');
 
-    await Promise.all([
-      import('prismjs/components/prism-markup'),
-      import('prismjs/components/prism-css'),
-      import('prismjs/components/prism-clike'),
-      import('prismjs/components/prism-javascript'),
-      import('prismjs/components/prism-typescript'),
-      import('prismjs/components/prism-jsx'),
-      import('prismjs/components/prism-tsx'),
-      import('prismjs/components/prism-ruby'),
-      import('prismjs/components/prism-python'),
-      import('prismjs/components/prism-go'),
-      import('prismjs/components/prism-rust'),
-      import('prismjs/components/prism-json'),
-      import('prismjs/components/prism-yaml'),
-      import('prismjs/components/prism-bash'),
-      import('prismjs/components/prism-sql'),
-      import('prismjs/components/prism-markdown'),
-      import('prismjs/components/prism-mermaid'),
-      import('prismjs/components/prism-swift'),
-      import('prismjs/components/prism-c'),
-      import('prismjs/components/prism-cpp'),
-      import('prismjs/components/prism-java'),
-      import('prismjs/components/prism-kotlin'),
-      import('prismjs/components/prism-php'),
-    ]);
+    await import('prismjs/components/prism-markup');
+    await import('prismjs/components/prism-css');
+    await import('prismjs/components/prism-clike');
+    await import('prismjs/components/prism-javascript');
+    await import('prismjs/components/prism-typescript');
+    await import('prismjs/components/prism-jsx');
+    await import('prismjs/components/prism-tsx');
+    await import('prismjs/components/prism-ruby');
+    await import('prismjs/components/prism-python');
+    await import('prismjs/components/prism-go');
+    await import('prismjs/components/prism-rust');
+    await import('prismjs/components/prism-json');
+    await import('prismjs/components/prism-yaml');
+    await import('prismjs/components/prism-bash');
+    await import('prismjs/components/prism-sql');
+    await import('prismjs/components/prism-markdown');
+    await import('prismjs/components/prism-mermaid');
+    await import('prismjs/components/prism-swift');
+    await import('prismjs/components/prism-c');
+    await import('prismjs/components/prism-cpp');
+    await import('prismjs/components/prism-java');
+    await import('prismjs/components/prism-kotlin');
+    await import('prismjs/components/prism-php');
 
     const { prism } = await import('@milkdown/plugin-prism');
     return prism as unknown as MilkdownPlugin;

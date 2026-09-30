@@ -47,6 +47,7 @@ async function main(): Promise<void> {
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.static(path.join(__dirname, '..', 'public')));
+  app.use(express.static(path.join(__dirname, '..', 'dist')));
 
   app.use((req, res, next) => {
     const originHeader = req.header('origin');
@@ -131,7 +132,7 @@ async function main(): Promise<void> {
   setupWebSocket(wss);
   await startCollabRuntimeEmbedded(PORT);
 
-  server.listen(PORT, () => {
+  server.listen(PORT, '127.0.0.1', () => {
     console.log(`[proof-sdk] listening on http://127.0.0.1:${PORT}`);
   });
 }

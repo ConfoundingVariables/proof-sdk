@@ -406,11 +406,14 @@ async function runServerSourceTests(): Promise<void> {
 }
 
 async function runServerHookTests(): Promise<void> {
-  const health = await get(SHARE_BASE, '/agent-setup')
+  // Hosted-deployment gate: /agent-setup is part of the public SDK surface and
+  // served by self-hosted SDK servers too, so it cannot distinguish hosted from
+  // SDK. /install-hooks.sh is only mounted by the hosted product.
+  const health = await get(SHARE_BASE, '/install-hooks.sh')
     .then((r) => ({ ok: r.status === 200, status: r.status }))
     .catch(() => ({ ok: false, status: 0 }));
   if (!health.ok) {
-    console.log(`SKIPPED server-route tests: ${SHARE_BASE} did not return /agent-setup (status ${health.status}).`);
+    console.log(`SKIPPED server-route tests: ${SHARE_BASE} did not return /install-hooks.sh (status ${health.status}).`);
     return;
   }
 
