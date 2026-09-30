@@ -138,3 +138,59 @@ discoveryRoutes.get('/agent-docs', (_req: Request, res: Response) => {
   }
   res.type('text/markdown; charset=utf-8').send(doc);
 });
+
+discoveryRoutes.get('/proof.SKILL.md', (req: Request, res: Response) => {
+  const skill = loadRepoText(path.join('docs', 'proof.SKILL.md'));
+  if (!skill) {
+    res.status(404).type('text/plain').send('proof.SKILL.md not found');
+    return;
+  }
+  const base = getPublicBaseUrl(req) || `http://127.0.0.1:${process.env.PORT || '4000'}`;
+  const localized = skill.replace(/http:\/\/localhost:4000/g, base);
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.type('text/markdown; charset=utf-8').send(localized);
+});
+
+discoveryRoutes.get('/agent-setup', (req: Request, res: Response) => {
+  const base = getPublicBaseUrl(req) || `http://127.0.0.1:${process.env.PORT || '4000'}`;
+  res.type('text/markdown; charset=utf-8').send(`# Proof — Agent Setup
+
+This is a self-hosted Proof SDK deployment. Base URL: \`${base}\`
+
+## Web-first Quickstart
+
+Install the unified Proof skill once, then collaborate over HTTP:
+
+Claude Code:
+
+    mkdir -p ~/.claude/skills/proof && curl -fsSL ${base}/proof.SKILL.md -o ~/.claude/skills/proof/SKILL.md
+
+Codex (installs to ~/.codex/skills/proof/SKILL.md):
+
+    mkdir -p ~/.codex/skills/proof && curl -fsSL ${base}/proof.SKILL.md -o ~/.codex/skills/proof/SKILL.md
+
+pi / generic agents with a skills directory:
+
+    mkdir -p ~/.agents/skills/proof && curl -fsSL ${base}/proof.SKILL.md -o ~/.agents/skills/proof/SKILL.md
+
+The canonical setup reference for SDK deployments is http://localhost:4000/agent-setup
+(override the port to match your deployment).
+
+## Collaborate on a document
+
+A human shares a link like <${base}/d/<slug>?token=<token>> with you. That URL is the invite:
+
+- Read markdown: curl -H "Accept: text/markdown" "${base}/d/<slug>?token=<token>"
+- Read state: GET ${base}/documents/<slug>/state with header "Authorization: Bearer <token>"
+- Edit: POST ${base}/documents/<slug>/edit, /edit/v2, or /ops
+- Presence: send header "X-Agent-Id: ai:<agent-id>" so humans see you in the doc
+
+Include "by" (e.g. "by":"ai:codex") on every write.
+
+## Full reference
+
+- Docs: ${base}/agent-docs
+- Contract: ${base}/AGENT_CONTRACT.md
+- Discovery: ${base}/.well-known/agent.json
+`);
+});

@@ -236,31 +236,29 @@ async function loadPrismPlugin(): Promise<MilkdownPlugin | null> {
   try {
     await import('prismjs');
 
-    await Promise.all([
-      import('prismjs/components/prism-markup'),
-      import('prismjs/components/prism-css'),
-      import('prismjs/components/prism-clike'),
-      import('prismjs/components/prism-javascript'),
-      import('prismjs/components/prism-typescript'),
-      import('prismjs/components/prism-jsx'),
-      import('prismjs/components/prism-tsx'),
-      import('prismjs/components/prism-ruby'),
-      import('prismjs/components/prism-python'),
-      import('prismjs/components/prism-go'),
-      import('prismjs/components/prism-rust'),
-      import('prismjs/components/prism-json'),
-      import('prismjs/components/prism-yaml'),
-      import('prismjs/components/prism-bash'),
-      import('prismjs/components/prism-sql'),
-      import('prismjs/components/prism-markdown'),
-      import('prismjs/components/prism-mermaid'),
-      import('prismjs/components/prism-swift'),
-      import('prismjs/components/prism-c'),
-      import('prismjs/components/prism-cpp'),
-      import('prismjs/components/prism-java'),
-      import('prismjs/components/prism-kotlin'),
-      import('prismjs/components/prism-php'),
-    ]);
+    await import('prismjs/components/prism-markup');
+    await import('prismjs/components/prism-css');
+    await import('prismjs/components/prism-clike');
+    await import('prismjs/components/prism-javascript');
+    await import('prismjs/components/prism-typescript');
+    await import('prismjs/components/prism-jsx');
+    await import('prismjs/components/prism-tsx');
+    await import('prismjs/components/prism-ruby');
+    await import('prismjs/components/prism-python');
+    await import('prismjs/components/prism-go');
+    await import('prismjs/components/prism-rust');
+    await import('prismjs/components/prism-json');
+    await import('prismjs/components/prism-yaml');
+    await import('prismjs/components/prism-bash');
+    await import('prismjs/components/prism-sql');
+    await import('prismjs/components/prism-markdown');
+    await import('prismjs/components/prism-mermaid');
+    await import('prismjs/components/prism-swift');
+    await import('prismjs/components/prism-c');
+    await import('prismjs/components/prism-cpp');
+    await import('prismjs/components/prism-java');
+    await import('prismjs/components/prism-kotlin');
+    await import('prismjs/components/prism-php');
 
     const { prism } = await import('@milkdown/plugin-prism');
     return prism as unknown as MilkdownPlugin;
@@ -4166,6 +4164,7 @@ class ProofEditorImpl implements ProofEditor {
       addItem('Copy link', async () => this.copyLinkWithFallback(this.getCanonicalShareUrl()));
       addDivider();
       addActionItem('View activity', () => this.openShareActivityModal());
+      addActionItem('Download as Markdown', () => this.downloadMarkdownFile());
 
       container.appendChild(menu);
       this.clampMenuToViewport(menu);
@@ -5521,6 +5520,54 @@ class ProofEditorImpl implements ProofEditor {
       fileClient.debouncedSave(contentWithMarks);
     }
     void actionMarksOverride;
+  }
+
+  /**
+   * Serialize the current editor content and trigger a browser download of a
+   * clean markdown file (proof spans for authored/comment/suggestion marks are
+   * stripped, keeping the visible text). Falls back to the share slug for the
+   * file name when no document title is available.
+   */
+  downloadMarkdownFile(): void {
+    if (!this.editor) {
+      console.error('[download] Editor not initialized');
+      return;
+    }
+    this.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      let markdown: string | null = null;
+      try {
+        const serializer = ctx.get(serializerCtx);
+        markdown = serializer(view.state.doc);
+      } catch (error) {
+        const details = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+        console.error('[download] Failed to serialize document', details);
+        return;
+      }
+      if (!markdown) return;
+
+      const cleanMarkdown = `${stripProofSpanTags(markdown).replace(/\n{3,}/g, '\n\n').trim()}\n`;
+      const titleBase = (document.title || '').replace(/\s*[|-]\s*Proof\s*$/, '').trim();
+      const nameBase = (titleBase || shareClient.getSlug() || 'document')
+        .replace(/[\\/:*?"<>|]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80);
+      const fileName = `${nameBase || 'document'}.md`;
+
+      const blob = new Blob([cleanMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      // Safari and some mobile browsers consume the blob URL asynchronously; revoking
+      // synchronously after the synthetic click can abort the download. Revoke after
+      // a grace period instead.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    });
   }
 
   private emitDocumentSnapshotNow(): void {

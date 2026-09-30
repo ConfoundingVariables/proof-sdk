@@ -27,7 +27,7 @@ If you want the hosted product, use [Proof](https://proofeditor.ai). Hosted Proo
 
 Requirements:
 
-- Node.js 18+
+- Node.js 22+ (better-sqlite3 v13 requires Node 22+; its N-API prebuilds ship inside the npm package, so no native toolchain is needed)
 
 Install dependencies:
 
