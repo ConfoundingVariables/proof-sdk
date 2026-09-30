@@ -4164,6 +4164,7 @@ class ProofEditorImpl implements ProofEditor {
       addItem('Copy link', async () => this.copyLinkWithFallback(this.getCanonicalShareUrl()));
       addDivider();
       addActionItem('View activity', () => this.openShareActivityModal());
+      addActionItem('Download as Markdown', () => this.downloadMarkdownFile());
 
       container.appendChild(menu);
       this.clampMenuToViewport(menu);
@@ -5519,6 +5520,54 @@ class ProofEditorImpl implements ProofEditor {
       fileClient.debouncedSave(contentWithMarks);
     }
     void actionMarksOverride;
+  }
+
+  /**
+   * Serialize the current editor content and trigger a browser download of a
+   * clean markdown file (proof spans for authored/comment/suggestion marks are
+   * stripped, keeping the visible text). Falls back to the share slug for the
+   * file name when no document title is available.
+   */
+  downloadMarkdownFile(): void {
+    if (!this.editor) {
+      console.error('[download] Editor not initialized');
+      return;
+    }
+    this.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      let markdown: string | null = null;
+      try {
+        const serializer = ctx.get(serializerCtx);
+        markdown = serializer(view.state.doc);
+      } catch (error) {
+        const details = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+        console.error('[download] Failed to serialize document', details);
+        return;
+      }
+      if (!markdown) return;
+
+      const cleanMarkdown = `${stripProofSpanTags(markdown).replace(/\n{3,}/g, '\n\n').trim()}\n`;
+      const titleBase = (document.title || '').replace(/\s*[|-]\s*Proof\s*$/, '').trim();
+      const nameBase = (titleBase || shareClient.getSlug() || 'document')
+        .replace(/[\\/:*?"<>|]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80);
+      const fileName = `${nameBase || 'document'}.md`;
+
+      const blob = new Blob([cleanMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      // Safari and some mobile browsers consume the blob URL asynchronously; revoking
+      // synchronously after the synthetic click can abort the download. Revoke after
+      // a grace period instead.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    });
   }
 
   private emitDocumentSnapshotNow(): void {
